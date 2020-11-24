@@ -10,7 +10,7 @@ library(readr)
 The dataset "countryrisk.csv" is attached, where for each country, four features of
 corruption index, peace index, legal risk index, and real GDP growth rate are measured.
 
-```{r load_countryriskdata}
+```{r}
 
 temp_data <- read.csv("countryriskdata.csv", row.names = 1) 
 countryrisk <- subset(temp_data, select = -c(Abbrev))
@@ -18,7 +18,8 @@ head(countryrisk)
 
 ```
 a. Carry out K-means clustering for K = 3.
-```{r 2a}
+
+```{r}
 #random seed so that K-means outputs reproducible.
 set.seed(8) 
 
@@ -42,7 +43,8 @@ countryrisk_cluster[
 
 ```
 (b) Use hierarchical clustering (with complete linkage) to determine 3 clusters.
-```{r 2b}
+
+```{r}
 
 hc.complete = hclust(dist(countryrisk), method="complete")
 hc.complete
@@ -58,7 +60,7 @@ rect.hclust(hc.complete, k = 3, border = 2:5)
 
 (c-1) K-means clustering for K = 3 with scaled features.
 
-```{r c-1}
+```{r}
 
 countryrisk_scaled <- scale(countryrisk) #scale the features
 head(countryrisk_scaled)
@@ -90,7 +92,8 @@ countryrisk_scaled_cluster[
 ```
 
 (c-2) Use hierarchical clustering (with complete linkage) to determine 3 clusters with scaled features.
-```{r c-2}
+
+```{r}
 
 hc.complete.scaled = hclust(dist(countryrisk_scaled), method="complete")
 hc.complete.scaled
@@ -115,14 +118,36 @@ GDP Growth: the real GDP growth (%) is typically a positive or negative number w
 
 
 ### K-MEANS CLUSTERING COMPARISON (SCALED VS UNSCALED)
-```{r d-1}
+```{r}
 # UNSCALED:
 km.out$size
 km.out$centers
 
+#Added box plot:
+featstr=c("Corruption","Peace","Legal","GDP Growth")
+clusterindices=km.out$cluster
+par(mfrow=c(1,4))
+for(i in 1:4){
+  boxplot(countryrisk[clusterindices==1,i],
+          countryrisk[clusterindices==2,i],
+          countryrisk[clusterindices==3,i],
+          xlab=featstr[i], col=c("orange","red","green"))
+}
+
 # SCALED:
 km.out.scaled$size
 km.out.scaled$centers
+
+#Added box plot:
+featstr=c("Corruption","Peace","Legal","GDP Growth")
+clusterindices=km.out.scaled$cluster
+par(mfrow=c(1,4))
+for(i in 1:4){
+  boxplot(countryrisk_scaled[clusterindices==1,i],
+          countryrisk_scaled[clusterindices==2,i],
+          countryrisk_scaled[clusterindices==3,i],
+          xlab=featstr[i], col=c("orange","green","red"))
+}
 ```
 Comment:
 
@@ -144,22 +169,41 @@ Using scaled data:
 
 
 ### HIERARCHICAL CLUSTERING COMPARISON (SCALED VS UNSCALED)
-```{r d-2}
+```{r}
 # UNSCALED:
 hc.clusters=cutree(hc.complete,3)
 table(hc.clusters)
 plot(hc.complete, main =" Complete Linkage ", xlab="", sub ="", cex = 0.3, hang = -1)
 rect.hclust(hc.complete, k = 3, border = 2:5)
 
+# Added boxplot
+clusterindices=hc.clusters
+par(mfrow=c(1,4))
+for(i in 1:4){
+  boxplot(countryrisk[clusterindices==1,i],
+          countryrisk[clusterindices==2,i],
+          countryrisk[clusterindices==3,i],
+          xlab=featstr[i], col=c("red","green","orange"))
+}
+
 # SCALED:
 hc.clusters.scaled=cutree(hc.complete.scaled,3)
 table(hc.clusters.scaled)
 plot(hc.complete.scaled, main =" Complete Linkage ", xlab="", sub ="", cex = 0.3, hang = -1)
 rect.hclust(hc.complete.scaled, k = 3, border = 2:5)
+
+# Added boxplot
+clusterindices=hc.clusters.scaled
+par(mfrow=c(1,4))
+for(i in 1:4){
+  boxplot(countryrisk_scaled[clusterindices==1,i],
+          countryrisk_scaled[clusterindices==2,i],
+          countryrisk_scaled[clusterindices==3,i],
+          xlab=featstr[i], col=c("orange","green","red"))
+}
 ```
 Comment:
 
-The classification is based on comparison to results from K-means clustering.
 Using unscaled data:
 
 - Cluster 1: 59 countries - high risk
@@ -179,15 +223,57 @@ Using scaled data:
 
 
 ### K-MEANS VS HIERARCHICAL CLUSTERING COMPARISON
-```{r d-3}
+```{r}
 # UNSCALED
-km.clusters = km.out$cluster
-table(km.clusters,hc.clusters)
+med=0
+clusterstr=c("High","Moderate","Low")
+
+clusterindices.km=km.out$cluster
+for(G in 1:3){
+med[G]=median(countryrisk[clusterindices.km==G,1])
+}
+for(G in 1:3){
+clusterindices.km[clusterindices.km==G]=clusterstr[rank(med)[G]]
+}
+km.clusters.str=clusterindices.km
+
+clusterindices.hc=hc.clusters
+for(G in 1:3){
+med[G]=median(countryrisk[clusterindices.hc==G,1])
+}
+for(G in 1:3){
+clusterindices.hc[clusterindices.hc==G]=clusterstr[rank(med)[G]]
+}
+hc.clusters.str=clusterindices.hc
+
+table(km.clusters.str,hc.clusters.str)
+
+#km.clusters = km.out$cluster
+#table(km.clusters,hc.clusters)
 
 # SCALED
-km.clusters.scaled = km.out.scaled$cluster
-table(km.clusters.scaled,hc.clusters.scaled)
-```
+clusterindices.km=km.out.scaled$cluster
+for(G in 1:3){
+med[G]=median(countryrisk[clusterindices.km==G,1])
+}
+for(G in 1:3){
+clusterindices.km[clusterindices.km==G]=clusterstr[rank(med)[G]]
+}
+km.clusters.str=clusterindices.km
+
+clusterindices.hc=hc.clusters.scaled
+for(G in 1:3){
+med[G]=median(countryrisk[clusterindices.hc==G,1])
+}
+for(G in 1:3){
+clusterindices.hc[clusterindices.hc==G]=clusterstr[rank(med)[G]]
+}
+hc.clusters.str=clusterindices.hc
+
+table(km.clusters.str,hc.clusters.str)
+
+#km.clusters.scaled = km.out.scaled$cluster
+#table(km.clusters.scaled,hc.clusters.scaled)```
 Comment:
 
 Using unscaled data:
