@@ -1,0 +1,207 @@
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# load the required libraries
+library(readr)
+
+```
+2. Consider the problem of understanding the risk of countries for foreign investment.
+The dataset "countryrisk.csv" is attached, where for each country, four features of
+corruption index, peace index, legal risk index, and real GDP growth rate are measured.
+
+```{r load_countryriskdata}
+
+temp_data <- read.csv("countryriskdata.csv", row.names = 1) 
+countryrisk <- subset(temp_data, select = -c(Abbrev))
+head(countryrisk)
+
+```
+a. Carry out K-means clustering for K = 3.
+```{r 2a}
+#random seed so that K-means outputs reproducible.
+set.seed(8) 
+
+#multiple run with different starting point to avoid local optimum:
+
+km.out <- kmeans(countryrisk,centers = 3, nstart=10) #starting point = 10
+km.out$tot.withinss
+km.out <- kmeans(countryrisk,centers = 3, nstart=20) #starting point = 20
+km.out$tot.withinss
+km.out <- kmeans(countryrisk,centers = 3, nstart=50) #starting point = 50
+km.out$tot.withinss
+
+#minimum total within-cluster sum of squares when starting point = 20 or 50.
+#continue with starting point = 50.
+km.out
+
+countryrisk_cluster <- cbind(countryrisk, cluster = km.out$cluster)
+countryrisk_cluster[
+  order(countryrisk_cluster[,"cluster"]),
+  ]
+
+```
+(b) Use hierarchical clustering (with complete linkage) to determine 3 clusters.
+```{r 2b}
+
+hc.complete = hclust(dist(countryrisk), method="complete")
+hc.complete
+
+hc.clusters=cutree(hc.complete,3)
+table(hc.clusters)
+
+#visualize the cluster
+plot(hc.complete, main =" Complete Linkage ", xlab="", sub ="", cex = 0.3, hang = -1)
+rect.hclust(hc.complete, k = 3, border = 2:5)
+
+```
+
+(c-1) K-means clustering for K = 3 with scaled features.
+
+```{r c-1}
+
+countryrisk_scaled <- scale(countryrisk) #scale the features
+head(countryrisk_scaled)
+
+#random seed so that K-means outputs reproducible.
+set.seed(8) 
+
+#multiple run with different starting point to avoid local optimum:
+
+km.out.scaled <- kmeans(countryrisk_scaled,centers = 3, nstart=10) #starting point = 10
+km.out.scaled$tot.withinss
+
+km.out.scaled <- kmeans(countryrisk_scaled,centers = 3, nstart=20) #starting point = 20
+km.out.scaled$tot.withinss
+
+km.out.scaled <- kmeans(countryrisk_scaled,centers = 3, nstart=50) #starting point = 50
+km.out.scaled$tot.withinss
+
+#minimum total within-cluster sum of squares when starting point = 10 or 20 or 50.
+#continue with starting point = 50.
+km.out.scaled
+
+countryrisk_scaled_cluster <- cbind(countryrisk_scaled, cluster = km.out$cluster)
+countryrisk_scaled_cluster[
+  order(countryrisk_scaled_cluster[,"cluster"]),
+  ]
+
+
+```
+
+(c-2) Use hierarchical clustering (with complete linkage) to determine 3 clusters with scaled features.
+```{r c-2}
+
+hc.complete.scaled = hclust(dist(countryrisk_scaled), method="complete")
+hc.complete.scaled
+hc.clusters.scaled=cutree(hc.complete.scaled,3)
+table(hc.clusters.scaled)
+
+#visualize the cluster
+plot(hc.complete.scaled, main =" Complete Linkage ", xlab="", sub ="", cex = 0.3, hang = -1)
+rect.hclust(hc.complete.scaled, k = 3, border = 2:5)
+
+```
+
+(d) For each of the clustering results in parts (a), (b), & (c), comment on the risk level (high, moderate, low) of each cluster. Compare the results (K-means clustering vs. hierarchical clustering; unscaled data vs. scaled data).
+
+Corruption: the corruption index is on a scale from 0 (highly corrupt) to 100 (no corruption)
+
+Peace: the peace index is on a scale from 1 (very peaceful) to 5 (not at all peaceful)
+
+Legal: the legal risk index runs from 0 to 10 (with high values being favorable)
+
+GDP Growth: the real GDP growth (%) is typically a positive or negative number with a magnitude less than 10. 
+
+
+### K-MEANS CLUSTERING COMPARISON (SCALED VS UNSCALED)
+```{r d-1}
+# UNSCALED:
+km.out$size
+km.out$centers
+
+# SCALED:
+km.out.scaled$size
+km.out.scaled$centers
+```
+Comment:
+
+Using unscaled data:
+
+- Cluster 1 (34 countries): medium risk countries - high GDP growth.
+
+- Cluster 2 (67 countries): high risk countries (low corruption index = high corruption, high peace index = not peaceful, low legal index = not favorable) - medium GDP growth.
+
+- Cluster 3 (21 countries): low risk countries (high corruption index = no corruption, low peace index = very peaceful, high legal index = favorable) - low GDP growth. 
+
+Using scaled data:
+
+- Cluster 1 (69 countries): medium risk countries - high GDP growth. 
+
+- Cluster 2 (38 countries): low risk countries (high corruption index = no corruption, low peace index = very peaceful, high legal index = favorable) - medium GDP growth.
+
+- Cluster 3 (15 countries): high risk countries (low corruption index = high corruption, high peace index = not peaceful, low legal index = not favorable) - low GDP growth.
+
+
+### HIERARCHICAL CLUSTERING COMPARISON (SCALED VS UNSCALED)
+```{r d-2}
+# UNSCALED:
+hc.clusters=cutree(hc.complete,3)
+table(hc.clusters)
+plot(hc.complete, main =" Complete Linkage ", xlab="", sub ="", cex = 0.3, hang = -1)
+rect.hclust(hc.complete, k = 3, border = 2:5)
+
+# SCALED:
+hc.clusters.scaled=cutree(hc.complete.scaled,3)
+table(hc.clusters.scaled)
+plot(hc.complete.scaled, main =" Complete Linkage ", xlab="", sub ="", cex = 0.3, hang = -1)
+rect.hclust(hc.complete.scaled, k = 3, border = 2:5)
+```
+Comment:
+
+The classification is based on comparison to results from K-means clustering.
+Using unscaled data:
+
+- Cluster 1: 59 countries - high risk
+
+- Cluster 2: 21 countries - low risk
+
+- Cluster 3: 42 countries - medium risk 
+
+The classification is based on comparison to results from K-means clustering.
+Using scaled data:
+
+- Cluster 1: 76 countries - medium risk
+
+- Cluster 2: 44 countries - low risk
+
+- Cluster 3: 2 countries - high risk
+
+
+### K-MEANS VS HIERARCHICAL CLUSTERING COMPARISON
+```{r d-3}
+# UNSCALED
+km.clusters = km.out$cluster
+table(km.clusters,hc.clusters)
+
+# SCALED
+km.clusters.scaled = km.out.scaled$cluster
+table(km.clusters.scaled,hc.clusters.scaled)
+```
+Comment:
+
+Using unscaled data:
+
+- All 59 countries in cluster 1 using hierarchical clustering (HC) are grouped to cluster 3 by K-means clustering (KM) - high risk countries.
+
+- All 21 countries in cluster 2 using HC are grouped to cluster 3 using KM - low risk countries.
+
+- Most (34 countries) in cluster 3 using HC are grouped to cluster 1 using KM, with some (8 countries) are grouped to cluster 2 using KM. 
+
+Using scaled data:
+
+- Most of cluster 1 (62 countries) using HC are grouped to cluster 1 using KM, but 13 countries in HC are grouped to cluster 3 in KM and 1 country in HC is grouped to clsuter 2.
+
+- Most of cluster 2 (37 countries) using HC are grouped to cluster 2 using KM, but 7 countries in HC are grouped to cluster 1 in KM.
+
+- All 2 countries in cluster 3 using HC are grouped to cluster 3 using KM.

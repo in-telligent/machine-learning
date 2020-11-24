@@ -1,0 +1,65 @@
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+# load the required libraries
+library(readr)
+
+```
+1. Use the attached dataset "iris.csv" to conduct the principal component analysis.
+
+```{r load_iris}
+
+iris <- read_csv("iris.csv")
+
+```
+(a) Delete the column containing the species type and use "newiris" for this new
+dataset.
+
+```{r 1a}
+
+newiris <- subset(iris, select = -c(Species))
+head(newiris)
+
+```
+(b) Perform a principal component analysis on the dataset newiris created above
+with "scale=TRUE". Save your PCA results in "irpc". Print "irpc" to see the
+output.
+
+```{r 1b}
+pca.out=prcomp(newiris,scale=TRUE) 
+#prcomp() centers the variables to have mean zero by default.
+#scale=TRUE scales the variables to have standard deviation one.
+pca.out
+
+irpc <- capture.output(pca.out)
+irpc
+```
+(c) Compare output in "irpc" with "eigen(cor(newiris))". What do you notice?
+
+```{r 1c}
+
+eigen.out = eigen(cor(newiris))
+eigen.out
+
+#The eigenvectors produced in eigen.out results are exactly the same as PC loading vectors produced in irpc.
+
+```
+(d) Write down the first two PCs (in formula) and calculate the proportion of variance explained by PC1 and PC2, respectively according to the output in "irpc".
+
+```{r 1d}
+pca.var = pca.out$sdev^2
+pca.pve = pca.var / sum (pca.var)
+pca.pve
+
+```
+
+$$ y^{hat} _{1}   = 0.52x_{1} - 0.27x_{2} + 0.58x_{3} + 0.56x_{4} $$
+PC1 = 72.96%
+
+PC1 that accounts for 72.96% of the variance places almost equal weights on features 'Sepal_len', 'Petal_len' and 'Petal_wid'.
+
+$$ y^{hat} _{2} = -0.38x_{1} - 0.92x_{2} - 0.02x_{3} - 0.07x_{4}$$
+PC2 = 22.85%
+
+PC2 that accounts for 22.85% of variance places most of the weight on Sepal_wid. 
+It shows that feature 'Sepal_wid' provides different information than the other three features.
